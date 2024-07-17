@@ -1,0 +1,15 @@
+Metadata-Version: 2.1
+Name: gsplat
+Version: 0.1.3
+Summary:  Python package for differentiable rasterization of gaussians
+Home-page: https://github.com/nerfstudio-project/gsplat
+License: UNKNOWN
+Download-URL: https://github.com/nerfstudio-project/gsplat/archive/gsplat-0.1.3.tar.gz
+Keywords: gaussian,splatting,cuda
+Platform: UNKNOWN
+Requires-Python: >=3.7
+Provides-Extra: dev
+License-File: LICENSE
+
+UNKNOWN
+
