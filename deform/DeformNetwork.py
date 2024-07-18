@@ -56,7 +56,7 @@ class Embedder:
 
 
 class DeformNetwork(nn.Module):
-    def __init__(self, D=8, W=256, input_ch=3, output_ch=59, multires=10, is_blender=True, is_6dof=False):
+    def __init__(self, D=8, W=256, input_ch=2, output_ch=59, multires=10, is_blender=True, is_6dof=False):
         super(DeformNetwork, self).__init__()
         self.D = D
         self.W = W
@@ -66,7 +66,7 @@ class DeformNetwork(nn.Module):
         self.skips = [D // 2]
 
         self.embed_time_fn, time_input_ch = get_embedder(self.t_multires, 1)
-        self.embed_fn, xyz_input_ch = get_embedder(multires, 3)
+        self.embed_fn, xyz_input_ch = get_embedder(multires, 2)
         self.input_ch = xyz_input_ch + time_input_ch
 
         if is_blender:
@@ -94,10 +94,10 @@ class DeformNetwork(nn.Module):
         self.is_6dof = is_6dof
 
         if is_6dof:
-            self.branch_w = nn.Linear(W, 3)
-            self.branch_v = nn.Linear(W, 3)
+            self.branch_w = nn.Linear(W, 2)
+            self.branch_v = nn.Linear(W, 2)
         else:
-            self.gaussian_warp = nn.Linear(W, 3)
+            self.gaussian_warp = nn.Linear(W, 2)
         self.gaussian_cholesky = nn.Linear(W, 3)
 
     def forward(self, x, t):
@@ -105,7 +105,7 @@ class DeformNetwork(nn.Module):
         if self.is_blender:
             t_emb = self.timenet(t_emb)  # better for D-NeRF Dataset
         x_emb = self.embed_fn(x)
-        h = torch.cat([x_emb, t_emb], dim=-1)
+        h = torch.cat([x_emb, t_emb], dim=-1)# 42,30
         for i, l in enumerate(self.linear):
             h = self.linear[i](h)
             h = F.relu(h)

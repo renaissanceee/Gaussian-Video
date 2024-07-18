@@ -1,6 +1,5 @@
 from gsplat.project_gaussians_2d import project_gaussians_2d
 from gsplat.rasterize_sum import rasterize_gaussians_sum
-from deform.deform_model import DeformModel
 from utils import *
 import torch
 import torch.nn as nn
@@ -10,10 +9,8 @@ from quantize import *
 from optimizer import Adan
 
 class GaussianVideo_Cholesky(nn.Module):
-    def __init__(self, t=0, loss_type="L2", **kwargs):
+    def __init__(self, loss_type="L2", **kwargs):
         super().__init__()
-        self.t = t
-        self.fid = self.t / 199
         self.loss_type = loss_type
         self.init_num_points = kwargs["num_points"]
         self.H, self.W = kwargs["H"], kwargs["W"]
@@ -68,21 +65,18 @@ class GaussianVideo_Cholesky(nn.Module):
         return self._cholesky+self.cholesky_bound
 
     # def forward(self,iter):
-    def forward(self, iter, d_xyz, d_cholesky):
-        self.get_xyz += d_xyz
-        self.get_cholesky_elements += d_cholesky
-        # ------------------
-        self.xys, depths, self.radii, conics, num_tiles_hit = project_gaussians_2d(self.get_xyz, self.get_cholesky_elements, self.H, self.W, self.tile_bounds)
+    def forward(self, d_xyz, d_cholesky):
+        self.xys, depths, self.radii, conics, num_tiles_hit = project_gaussians_2d(self.get_xyz+d_xyz, self.get_cholesky_elements+d_cholesky, self.H, self.W, self.tile_bounds)
         out_img = rasterize_gaussians_sum(self.xys, depths, self.radii, conics, num_tiles_hit,
                 self.get_features, self._opacity, self.H, self.W, self.BLOCK_H, self.BLOCK_W, background=self.background, return_alpha=False)
         out_img = torch.clamp(out_img, 0, 1) #[H, W, 3]
         out_img = out_img.view(-1, self.H, self.W, 3).permute(0, 3, 1, 2).contiguous()
         return {"render": out_img}
 
-    # def train_iter(self, gt_image, iter):
-    def train_iter(self, gt_image, iter, d_xyz, d_cholesky):
-        # render_pkg = self.forward(iter)
-        render_pkg = self.forward(iter, d_xyz, d_cholesky)
+    # def train_iter(self, gt_image):
+    def train_iter(self, gt_image, d_xyz, d_cholesky):
+        # render_pkg = self.forward()
+        render_pkg = self.forward(d_xyz, d_cholesky)
         image = render_pkg["render"]
         loss = loss_fn(image, gt_image, self.loss_type, lambda_value=0.7)
         loss.backward()
@@ -92,12 +86,6 @@ class GaussianVideo_Cholesky(nn.Module):
         self.optimizer.step()
         self.optimizer.zero_grad(set_to_none = True)
         self.scheduler.step()
-        ##################
-        # 每个iteration都更新
-        self.deform_model.optimizer.step()
-        self.deform_model.optimizer.zero_grad()
-        self.deform_model.update_learning_rate(iter)
-        ##################
         return loss, psnr
 
     def forward_quantize(self):

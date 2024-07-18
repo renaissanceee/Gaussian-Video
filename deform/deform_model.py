@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import os
-from scene import DeformNetwork
-from scene.utils import searchForMaxIteratio,get_expon_lr_func
+from deform.DeformNetwork import DeformNetwork
+from deform.utils import searchForMaxIteration,get_expon_lr_func
 
 
 class DeformModel:
@@ -17,27 +17,19 @@ class DeformModel:
         self.position_lr_max_steps = 30_000
         self.deform_lr_max_steps = 40_000
 
-        if model_path is not None:
-            print(f"loading model path:{model_path}")
-            checkpoint = torch.load(model_path, map_location=self.device)
-            model_dict = self.gaussian_model.state_dict()
-            pretrained_dict = {k: v for k, v in checkpoint.items() if k in model_dict}
-            model_dict.update(pretrained_dict)
-            self.gaussian_model.load_state_dict(model_dict)
-
     def step(self, xyz, time_emb):
         return self.deform(xyz, time_emb)
 
     def train_setting(self):
         l = [
             {'params': list(self.deform.parameters()),
-             'lr': training_args.position_lr_init * self.spatial_lr_scale,
+             'lr': self.position_lr_init * self.spatial_lr_scale,
              "name": "deform"}
         ]
         self.optimizer = torch.optim.Adam(l, lr=0.0, eps=1e-15)
         self.deform_scheduler_args = get_expon_lr_func(lr_init=self.position_lr_init * self.spatial_lr_scale,
                                                        lr_final=self.position_lr_final,
-                                                       lr_delay_mult=tself.position_lr_delay_mult,
+                                                       lr_delay_mult=self.position_lr_delay_mult,
                                                        max_steps=self.deform_lr_max_steps)
 
     def save_weights(self, model_path, iteration):

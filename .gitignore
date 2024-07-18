@@ -1,0 +1,27 @@
+# 忽略操作系统文件
+.DS_Store
+Thumbs.db
+
+# 忽略日志文件
+*.log
+
+# 忽略临时文件
+*.tmp
+img/
+# 忽略 Python 虚拟环境目录
+env/
+__pycache__/
+
+# 忽略 Node.js 依赖目录
+node_modules/
+
+# 忽略编译生成的文件
+dist/
+build/
+
+#########
+checkpoints/
+checkpoints_quant/
+DIV2K_valid_LR_bicubic/
+dataset/
+DIV2K_valid_LR_bicubic_X2.zip
