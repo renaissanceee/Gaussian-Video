@@ -80,6 +80,7 @@ class DefTrainer2d:
         progress_bar = tqdm(range(1, self.iterations + 1), desc="Training progress")
         self.gaussian_model.train()
         # frame_stack
+        # warm_up = 10_000
         warm_up = 10_000
         frames = list(range(self.image_length))
         random.shuffle(frames)
@@ -95,6 +96,9 @@ class DefTrainer2d:
             # ---------------------------------------
             if iter < warm_up:
                 d_xyz, d_cholesky = 0.0, 0.0
+                idx = 0
+                image_path = self.image_root / f'r_{idx}.png'
+                gt_image = image_path_to_tensor(image_path).to(self.device)
             else:
                 # tmp = image_name.split(".")[0]  # r_23
                 # t = int(tmp.split("_")[1])  # 23
